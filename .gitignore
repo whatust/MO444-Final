@@ -1,5 +1,3 @@
 database/
-.ipython_checkpoints/
 .ipynb_checkpoints/
-.*csv
-submission.csv
+*.csv
