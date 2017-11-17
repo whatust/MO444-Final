@@ -1,3 +1,2 @@
-database/
-.ipynb_checkpoints/
-*.csv
+input/
+src/.ipynb_checkpoints/
