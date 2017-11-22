@@ -10,11 +10,14 @@ import re
 import keras
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
+from keras.layers import LSTM
 from keras.layers import Conv2D, MaxPooling2D
 from keras.optimizers import Adam
+import matplotlib as plt
+import keras.backend as K
 print("done")
 
-def append_data(dat, m, days, x, y, num_days = 7):
+def append_data(dat, m, days, x, y, num_days = 0):
     ### Appends to x, y the input/output
     ### input format: [page, current_day, access_of_previous_days]
     # page: a exclusive number given by the map m
@@ -60,9 +63,13 @@ def treat(s):
             r[i] = int(float(r[i]))
     return r
 
+def sampe_loss(y_p, y_t):
+
+    return 200 * K.mean(K.abs((y_t - y_p) / K.clip(K.abs(y_t) + K.abs(y_p), K.epsilon(), None)))
+
 # read data
 print("Reading data")
-data_path = "train_1.csv"
+data_path = "../input/train_1.csv"
 data_file = open(data_path)
 data = data_file.readlines()
 days = data[0].split(',')
@@ -82,38 +89,44 @@ for e in data:
 print("Creating input")
 x = []
 y = []
-for i in range(0, 1): # using only the first page
-# for i in range(0, len(data)) # using every page
+
+pages = 0
+
+#for i in [pages]: # using only the first page
+for i in range(0, 10): # using every page
     append_data(data[i], m, days, x, y)
-x = np.array(x)
+x = np.expand_dims(np.array(x), axis=1)
 y = np.array(y)
+
 print("done")
 
 # model
 print("Initialize model")
-epochs = 2000
-batch_size = 64
-learning_rate = 1e-6
+epochs = 20
+batch_size = 1
+learning_rate = 1e-5
 decay = 0.00
 model = Sequential()
-model.add(Dense(512, input_shape=x[0].shape, activation='relu'))
+model.add(LSTM(50, input_shape=(1,2)))
 model.add(Dense(512, activation='relu'))
 
 model.add(Dense(1, activation='relu'))
 
 opt = Adam(lr=learning_rate, decay=decay)
-model.compile(loss='mean_squared_error',
-              optimizer=opt)
+model.compile(loss=sampe_loss, optimizer=opt)
 
 print("Run model")
-model.fit(x, y, batch_size=batch_size, epochs=epochs, verbose=1)
+history = model.fit(x, y, batch_size=batch_size, epochs=epochs, verbose=1)
 print("done")
+
+#plt.plot(history.loss)
+#plot.show()
 
 ## Check result for a given page and day
 x = []
 y = []
 append_data(data[0], m, days, x, y)
-x = np.array([x[0]])
+x = np.expand_dims(np.array([x[0]]), axis=1)
 y = np.array([y[0]])
 
 print(model.predict(x, 1, verbose=1))
