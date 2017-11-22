@@ -13,11 +13,11 @@ from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import LSTM
 from keras.layers import Conv2D, MaxPooling2D
 from keras.optimizers import Adam
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import keras.backend as K
 print("done")
 
-def append_data(dat, m, days, x, y, num_days = 0):
+def append_data(dat, m, days, x, y, num_days = 1):
     ### Appends to x, y the input/output
     ### input format: [page, current_day, access_of_previous_days]
     # page: a exclusive number given by the map m
@@ -67,6 +67,42 @@ def sampe_loss(y_p, y_t):
 
     return 200 * K.mean(K.abs((y_t - y_p) / K.clip(K.abs(y_t) + K.abs(y_p), K.epsilon(), None)))
 
+def plot_visits(index):
+    days=np.arange(1, select_train.shape[1])
+
+    plt.figure(figsize=(12, 4))
+    plt.plot(days, select_train.loc[index][1:])
+    plt.title(select_train.loc[index]['Page'])
+    plt.ylabel('Views per Page')
+    plt.xlabel('Day')
+    plt.show()
+
+def plot_loss(history):
+    
+    plt.figure(figsize=(12, 4))
+
+    plt.plot(history.history['loss'], label='train')
+    plt.legend()
+    plt.title('Loss')
+    plt.ylabel('Views per Page')
+    plt.xlabel('Day')
+    plt.show()
+
+def plot_pred(train, pred): # needs to check if plot is printing on the right day
+    train_days =np.arange(1, valid_indx)
+    test_days = np.arange(train_indx, valid_indx)
+    
+
+    plt.figure(figsize=(12, 4))
+    plt.plot(train_days, train[1:valid_indx], color='blue')
+    plt.plot(test_days, pred, color='green')
+    #plt.plot(test_days, train[train_indx:], color='red')
+    plt.title(train[0])
+    plt.ylabel('Views per Page')
+    plt.xlabel('Day')
+    
+    plt.show()
+
 # read data
 print("Reading data")
 data_path = "../input/train_1.csv"
@@ -90,25 +126,47 @@ print("Creating input")
 x = []
 y = []
 
-pages = 0
+#pages = 10513 # The big bang theory
+pages = 9033 # Elon Musk
+#pages = 40734 # Thanksgiving
+#pages = 10271 # Russia
 
-#for i in [pages]: # using only the first page
-for i in range(0, 10): # using every page
+for i in [pages]: # using only the first page
+#for i in range(0, 10): # using every page
     append_data(data[i], m, days, x, y)
 x = np.expand_dims(np.array(x), axis=1)
 y = np.array(y)
+
+
+train_percentage = 0.7
+valid_percentage = 0.2
+
+#Separating train validation test
+train_indx = int(train_percentage * x.shape[0])
+valid_indx = int((train_percentage + valid_percentage) * x.shape[0])
+
+train_x = x[:train_indx]
+train_y = y[:train_indx]
+
+valid_x = x[train_indx:valid_indx]
+valid_y = y[train_indx:valid_indx]
+
+test_x = x[:valid_indx]
+test_y = y[:valid_indx]
 
 print("done")
 
 # model
 print("Initialize model")
-epochs = 20
-batch_size = 1
-learning_rate = 1e-5
+epochs = 1000
+batch_size = 10
+learning_rate = 1e-3
 decay = 0.00
 model = Sequential()
-model.add(LSTM(50, input_shape=(1,2)))
-model.add(Dense(512, activation='relu'))
+model.add(LSTM(50, input_shape=(1,3), return_sequences=True))
+model.add(LSTM(50))
+model.add(Dense(256, activation='relu'))
+model.add(Dense(256, activation='relu'))
 
 model.add(Dense(1, activation='relu'))
 
@@ -116,18 +174,13 @@ opt = Adam(lr=learning_rate, decay=decay)
 model.compile(loss=sampe_loss, optimizer=opt)
 
 print("Run model")
-history = model.fit(x, y, batch_size=batch_size, epochs=epochs, verbose=1)
+history = model.fit(train_x, train_y, batch_size=batch_size, epochs=epochs, verbose=1)
 print("done")
 
-#plt.plot(history.loss)
-#plot.show()
+plot_loss(history)
 
-## Check result for a given page and day
-x = []
-y = []
-append_data(data[0], m, days, x, y)
-x = np.expand_dims(np.array([x[0]]), axis=1)
-y = np.array([y[0]])
+p = np.squeeze(model.predict(valid_x, 1))
+plot_pred(data[pages], p)
 
-print(model.predict(x, 1, verbose=1))
-print(y)
+#print("Loss:{}".format(sampe_loss(p, valid_y)))
+
