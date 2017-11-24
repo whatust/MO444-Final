@@ -12,6 +12,8 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import LSTM
 from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import BatchNormalization
+from keras.regularizers import l2
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
 import keras.backend as K
@@ -88,14 +90,14 @@ def plot_loss(history):
     plt.xlabel('Day')
     plt.show()
 
-def plot_pred(train, pred): # needs to check if plot is printing on the right day
-    train_days =np.arange(1, valid_indx)
-    test_days = np.arange(train_indx, valid_indx)
-    
+def plot_pred(train, pred, train_pred): # needs to check if plot is printing on the right day
+    train_days = np.arange(1, valid_indx)
+    test_days = np.arange(train_indx + 1, valid_indx + 1)
 
     plt.figure(figsize=(12, 4))
     plt.plot(train_days, train[1:valid_indx], color='blue')
-    plt.plot(test_days, pred, color='green')
+    plt.plot(test_days, pred, color='red')
+    plt.plot(train_days[:len(train_pred)], train_pred, color='green')
     #plt.plot(test_days, train[train_indx:], color='red')
     plt.title(train[0])
     plt.ylabel('Views per Page')
@@ -127,8 +129,8 @@ x = []
 y = []
 
 #pages = 10513 # The big bang theory
-pages = 9033 # Elon Musk
-#pages = 40734 # Thanksgiving
+#pages = 9033 # Elon Musk
+pages = 40734 # Thanksgiving
 #pages = 10271 # Russia
 
 for i in [pages]: # using only the first page
@@ -151,8 +153,8 @@ train_y = y[:train_indx]
 valid_x = x[train_indx:valid_indx]
 valid_y = y[train_indx:valid_indx]
 
-test_x = x[:valid_indx]
-test_y = y[:valid_indx]
+test_x = x[valid_indx:]
+test_y = y[valid_indx:]
 
 print("done")
 
@@ -160,13 +162,28 @@ print("done")
 print("Initialize model")
 epochs = 1000
 batch_size = 10
-learning_rate = 1e-3
+learning_rate = 1e-4
 decay = 0.00
 model = Sequential()
-model.add(LSTM(50, input_shape=(1,3), return_sequences=True))
-model.add(LSTM(50))
-model.add(Dense(256, activation='relu'))
-model.add(Dense(256, activation='relu'))
+model.add(LSTM(150, input_shape=(1,3), return_sequences=True))
+model.add(BatchNormalization())
+model.add(LSTM(150, return_sequences=True))
+model.add(BatchNormalization())
+model.add(LSTM(150, return_sequences=True))
+model.add(BatchNormalization())
+model.add(LSTM(150, return_sequences=True))
+model.add(BatchNormalization())
+model.add(LSTM(150))
+model.add(BatchNormalization())
+model.add(Dense(128, activation='relu', kernel_regularizer=l2(0.00)))
+model.add(BatchNormalization())
+model.add(Dense(128, activation='relu', kernel_regularizer=l2(0.00)))
+model.add(BatchNormalization())
+model.add(Dense(128, activation='relu', kernel_regularizer=l2(0.00)))
+#model.add(BatchNormalization())
+#model.add(Dense(128, activation='relu', kernel_regularizer=l2(0.01)))
+#model.add(BatchNormalization())
+#model.add(Dense(128, activation='relu', kernel_regularizer=l2(0.01)))
 
 model.add(Dense(1, activation='relu'))
 
@@ -180,7 +197,9 @@ print("done")
 plot_loss(history)
 
 p = np.squeeze(model.predict(valid_x, 1))
-plot_pred(data[pages], p)
+t = np.squeeze(model.predict(train_x, 1))
+plot_pred(data[pages], p, t)
 
-#print("Loss:{}".format(sampe_loss(p, valid_y)))
+print("Train Loss:     {}".format(model.evaluate(x=train_x, y=train_y)))
+print("Validation Loss:{}".format(model.evaluate(x=valid_x, y=valid_y)))
 
