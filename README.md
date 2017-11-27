@@ -2,5 +2,9 @@
 
 ## Database
 
-Needs train_1.csv on input/
+create input folder on project root folder
+$ mkdir input
+
+move train_1.csv to input folder
+$ mv <source file> input/train_1.csv
 

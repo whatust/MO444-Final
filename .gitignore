@@ -1,2 +1,4 @@
 input/
 src/.ipynb_checkpoints/
+src/__pycache__
+src/models
