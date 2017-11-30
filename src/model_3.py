@@ -13,6 +13,7 @@ from keras.models import Sequential
 from keras.models import Model
 from keras.layers import Dense
 from keras.layers import LSTM
+from keras.layers import GRU
 from keras.layers import Dropout
 from keras.layers import Activation
 from keras.layers import Flatten
@@ -104,10 +105,10 @@ lstm_size = 256
 hidden_size = 1024
 
 lstm_input = Input(shape=(1,3))
-lstm_0 = LSTM(lstm_size, return_sequences=True)(lstm_input)
-lstm_1 = LSTM(lstm_size, return_sequences=True)(lstm_0)
-lstm_2 = LSTM(lstm_size, return_sequences=True)(lstm_1)
-lstm_3 = LSTM(lstm_size)(lstm_2)
+lstm_0 = GRU(lstm_size, return_sequences=True)(lstm_input)
+lstm_1 = GRU(lstm_size, return_sequences=True)(lstm_0)
+lstm_2 = GRU(lstm_size, return_sequences=True)(lstm_1)
+lstm_3 = GRU(lstm_size)(lstm_2)
 
 norm_0 = BatchNormalization()(lstm_3)
 
@@ -126,7 +127,7 @@ opt = Adam(lr=learning_rate, decay=decay)
 model.compile(loss=sampe_loss, optimizer=opt)
 
 print("Run model")
-history = model.fit([train_x, np.squeeze(train_x, axis=1)], train_y, batch_size=batch_size, epochs=epochs, shuffle=True, verbose=1)
+history = model.fit([train_x, np.squeeze(train_x, axis=1)], train_y, batch_size=batch_size, epochs=epochs, verbose=1)
 print("done")
 
 t_loss = model.evaluate([train_x, np.squeeze(train_x, axis=1)], y=train_y)
@@ -138,7 +139,7 @@ print("Train Loss:     {}".format(t_loss))
 print("Validation Loss:{}".format(v_loss))
 
 print("Saving model")
-model_name = "model2_{}-{}_{:06.3f}_{:06.3f}.h5".format(lstm_size, hidden_size, v_loss, t_loss)
+model_name = "model3_{}-{}_{:06.3f}_{:06.3f}.h5".format(lstm_size, hidden_size, v_loss, t_loss)
 model_path = join("models", model_name)
 #plot_model(model, to_file=join("models", 'model1.png'))
 model.save(model_path)

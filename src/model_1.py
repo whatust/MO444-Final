@@ -92,14 +92,13 @@ print("done")
 print("Initialize model")
 epochs = 20
 batch_size = 1000
-learning_rate = 1e-5
+learning_rate = 1e-7
 decay = 0.000000
 hidden_size = 1024 
 
 model = Sequential()
 
 model.add(Dense(hidden_size, input_shape=train_x[0].shape, activation='relu', kernel_regularizer=l2(0.00)))
-model.add(Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00)))
 model.add(Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00)))
 model.add(Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00)))
 model.add(Dense(1, activation='relu'))
@@ -132,8 +131,8 @@ plot_loss(history, model_name)
 print("Plot Predictions")
 
 pages = []
-#pages.append(10513) # The big bang theory
-#pages.append(9033) # Elon Musk
+pages.append(10513) # The big bang theory
+pages.append(9033) # Elon Musk
 pages.append(40734) # Thanksgiving
 pages.append(10271) # Russia
 
