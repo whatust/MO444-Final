@@ -1,1 +1,32 @@
-\section{Background and Related Work}
+\section{Background}
+\label{sec:background}
+
+\subsection{Time Series}
+
+\subsection{Multi-Layer Fully Connected}
+
+\subsection{Recurrent Neural Network}
+
+A Recurrent Neural Network (RNN) is very similar to a feedforward network, 
+except that the connections also links backwards on the network.
+So the output is defined similarly to equation \ref{eq:recurrent_net}.
+Note that the result from last step contributes to the next and so on,
+therefore the $ith$ step depends on all previous steps,
+which takes a form of a memory \cite{geron2017hands}.
+
+\begin{equation}
+\label{eq:recurrent_net}
+Y_{(t)} = \phi(X_{(t)} \dot W_x + Y_{(t-1)} \dot W_y + b)
+\end{equation}
+
+The training method analog to the feedforward networks,
+the first step is a forward pass that unroll the network time loop,
+the values for all $Y's$ in the time series are also calculated in the process.
+The gradient value is calculated using all the results in the cost function,
+for example if the time series generates $Y_1, \dots Y_n$ and the cost function uses only the last three values of $Y$ than the gradient is calculated using only $Y_{n-2}, Y_{n-1} , Y_n$.
+
+Recurrent neural network tends to suffer from exploding and vanishing gradients more than a convolution or fully connected network,
+since the number of steps in time it unrolls also adds to the depth of the network.
+To solve this problem techniques like batch normalization, non-saturating activation functions and gradient clipping are exploited. 
+
+\subsection{Long Short Term Memory}
