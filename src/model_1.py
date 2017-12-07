@@ -43,7 +43,7 @@ data = data_file.readlines()
 days = data[0].split(',')
 days = [i.strip().replace("\"", "") for i in days]
 days[0] = ""
-data = [treat(i) for i in data[1:50000]] # ignores first line and any line after 50000
+data = [treat(i) for i in data[1:50001]] # ignores first line and any line after 50000
 print("done")
 
 # creates a map where a page is the key and a exclusive integer is the value
@@ -112,11 +112,13 @@ print("done")
 
 t_loss = model.evaluate(x=train_x, y=train_y)
 v_loss = model.evaluate(x=valid_x, y=valid_y)
+test_loss = model.evaluate(x=test_x, y=test_y)
 
 print("Model")
 print(model)
 print("Train Loss:     {}".format(t_loss))
 print("Validation Loss:{}".format(v_loss))
+print("Test Loss:      {}".format(test_loss))
 
 print("Saving model")
 model_name = "model1_{}_{:06.3f}_{:06.3f}.h5".format(hidden_size, v_loss, t_loss)
@@ -161,11 +163,12 @@ test_y = np.array(test_y)
 
 p = model.predict(valid_x, 1).reshape((len(pages), -1))
 t = model.predict(train_x, 1).reshape((len(pages), -1))
+ts = model.predict(test_x, 1).reshape((len(pages), -1))
 
 print(p.shape)
 print(t.shape)
 
 for idx, page in enumerate(pages):
-    plot_pred(data[page][:valid_indx], p[idx], t[idx], 7)
+    plot_pred(data[page], p[idx], t[idx], ts[idx], 7)
 
 

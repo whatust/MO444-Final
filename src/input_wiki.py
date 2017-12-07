@@ -47,3 +47,19 @@ def treat(s):
             r[i] = int(float(r[i]))
     return r
 
+def append_data_lstm(page, dat, m, days, x, y, batch_size=1000):
+    ### Appends to x, y the input/output
+    ### input format: [page, current_day, access_of_previous_days]
+    # page: a exclusive number given by the map m
+    # current_day: a integer for the given month and days
+    # access_of_previous_days: array of access of *num_days* previous days
+    ### output: correct_number_of_access
+    for i in range(1 + 1, len(dat)):
+        x += [[m[page]]]
+        x[-1] += [date_to_value(days[i])]
+        x[-1] += [dat[i - 1]]
+        y += [dat[i]]
+
+    return x, y
+
+
