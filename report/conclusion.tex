@@ -1,3 +1,20 @@
 \section{Conclusion \& Future Work}
+\label{sec:conclusion}
+
+Our best model was the MLP which used values from 7 days previous the one intended to be predicted,
+however this model has a obvious limitation, because it cannot learn predictions and relation between visits longer than the 7 days it receives as input.
+In other words no long time sequence is learned using this model only small (7-days), page and day visit relation, since both data are also inputs.
+The stateless LSTM functions closely to an LSTM and end-up achieving a very similar performance to the MLP model, specially with the fully connected bypassing the LSTM layers.
+
+The stateful LSTM takes a lot longer to train and since we could only test one architecture it is unclear if a model based on this component can achieve significant better results.
+This was a good base work to future experiments on the wikipedia page visit forecast problem.
+
+Possible ways to improve our models are:
+\begin{itemize}
+	\item Use embedding to cluster pages with similar behaviors (all models);
+	\item Use visit measurements from days before 7 days prior, by calculating mean or media of a window of days (MLP model);
+	\item Use a different ways to feed inputs to the model, by increasing the time-steps in each backpropagarion rollback (LSTM stateful model);
+	\item increase the number of LSTM cells (LSTM stateful model);
+\end{itemize}
 
 

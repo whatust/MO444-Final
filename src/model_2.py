@@ -131,11 +131,13 @@ print("done")
 
 t_loss = model.evaluate([train_x, np.squeeze(train_x, axis=1)], y=train_y)
 v_loss = model.evaluate([valid_x, np.squeeze(valid_x, axis=1)], y=valid_y)
+ts_loss = model.evaluate([test_x, np.squeeze(test_x, axis=1)], y=test_y)
 
 print("Model")
 print(model)
 print("Train Loss:     {}".format(t_loss))
 print("Validation Loss:{}".format(v_loss))
+print("Test           :{}".format(ts_loss))
 
 print("Saving model")
 model_name = "model2_{}-{}_{:06.3f}_{:06.3f}.h5".format(lstm_size, hidden_size, v_loss, t_loss)
@@ -154,9 +156,6 @@ pages.append(10513) # The big bang theory
 pages.append(9033) # Elon Musk
 pages.append(10271) # Russia
 pages.append(40734) # Thanksgiving
-
-#pages.append(10) # Russia
-#pages.append(11) # Russia
 
 train_x = []
 train_y = []
@@ -183,11 +182,12 @@ test_y = np.array(test_y)
 
 p = model.predict([valid_x, np.squeeze(valid_x, axis=1)], 1).reshape((len(pages), -1))
 t = model.predict([train_x, np.squeeze(train_x, axis=1)], 1).reshape((len(pages), -1))
+ts = model.predict([test_x, np.squeeze(test_x, axis=1)], 1).reshape((len(pages), -1))
 
 print(p.shape)
 print(t.shape)
 
 for idx, page in enumerate(pages):
-    plot_pred(data[page][:valid_indx], p[idx], t[idx], num_days)
+    plot_pred(data[page], p[idx], t[idx], ts[idx] ,num_days)
 
 

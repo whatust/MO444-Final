@@ -103,42 +103,35 @@ print("done")
 
 # model
 print("Initialize model")
-epochs = 10
+epochs = 40
 batch_size = 1000
-learning_rate = 1e-5
+learning_rate = 1e-6
 decay = 0.000000
 lstm_size = 256
 hidden_size = 1024
 
 lstm_input = Input(shape=(1,3), batch_shape=[batch_size, 1 ,3])
-lstm_0 = LSTM(lstm_size, return_sequences=True, stateful=True)(lstm_input)
-lstm_1 = LSTM(lstm_size, return_sequences=True, stateful=True)(lstm_0)
-lstm_2 = LSTM(lstm_size, return_sequences=True, stateful=True)(lstm_1)
-lstm_3 = LSTM(lstm_size)(lstm_2)
+#lstm_0 = LSTM(lstm_size, return_sequences=True, stateful=True)(lstm_input)
+lstm_0 = LSTM(lstm_size)(lstm_input)
 
-norm_0 = BatchNormalization()(lstm_3)
+dense_0 = Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00))(lstm_0)
 
-dense_input = Input(shape=(3,), batch_shape=[batch_size, 3])
-dense_0 = Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00))(dense_input)
-norm_1 = BatchNormalization()(dense_0)
-
-merge = concatenate([norm_1, norm_0], axis=1)
-
-dense_1 = Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00))(merge)
+#norm_0 = BatchNormalization()(dense_0)
+dense_1 = Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00))(dense_0)
 dense_2 = Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00))(dense_1)
 result = Dense(1, activation='relu')(dense_2)
 
-model = Model(inputs=[lstm_input, dense_input], outputs=result)
+model = Model(inputs=[lstm_input], outputs=result)
 opt = Adam(lr=learning_rate, decay=decay)
 model.compile(loss=sampe_loss, optimizer=opt)
 
 print("Run model")
-history = model.fit([train_x, np.squeeze(train_x, axis=1)], train_y, batch_size=batch_size, epochs=epochs, shuffle=False, verbose=1)
+history = model.fit([train_x], train_y, batch_size=batch_size, epochs=epochs, shuffle=False, verbose=1)
 print("done")
 
-t_loss = model.evaluate([train_x, np.squeeze(train_x, axis=1)], y=train_y, batch_size=batch_size)
-v_loss = model.evaluate([valid_x, np.squeeze(valid_x, axis=1)], y=valid_y, batch_size=batch_size)
-test_loss = model.evaluate([test_x, np.squeeze(test_x, axis=1)], y=test_y, batch_size=batch_size)
+t_loss = model.evaluate([train_x], y=train_y, batch_size=batch_size)
+v_loss = model.evaluate([valid_x], y=valid_y, batch_size=batch_size)
+test_loss = model.evaluate([test_x], y=test_y, batch_size=batch_size)
 
 print("Model")
 print(model)
@@ -159,13 +152,11 @@ plot_loss(history, model_name)
 print("Plot Predictions")
 
 pages = []
-pages.append(10513) # The big bang theory
-pages.append(9033) # Elon Musk
-pages.append(10271) # Russia
-pages.append(40734) # Thanksgiving
-
-#pages.append(10) # Russia
-#pages.append(11) # Russia
+pages.append(1)
+#pages.append(10513) # The big bang theory
+#pages.append(9033) # Elon Musk
+#pages.append(10271) # Russia
+#pages.append(40734) # Thanksgiving
 
 train_x = []
 train_y = []
@@ -181,6 +172,11 @@ for i in pages:
     append_data_lstm(data[i][0], data[i][train_indx:valid_indx], m, days, valid_x, valid_y, batch_size = batch_size)
     append_data_lstm(data[i][0], data[i][valid_indx:], m, days, test_x, test_y, batch_size = batch_size)
 
+for i in range(1000-len(pages)):
+    append_data_lstm(data[i][0], data[i][1:train_indx], m, days, train_x, train_y, batch_size = batch_size)
+    append_data_lstm(data[i][0], data[i][train_indx:valid_indx], m, days, valid_x, valid_y, batch_size = batch_size)
+    append_data_lstm(data[i][0], data[i][valid_indx:], m, days, test_x, test_y, batch_size = batch_size)
+
 train_x = np.expand_dims(np.array(train_x), 1)
 train_y = np.array(train_y)
 
@@ -190,13 +186,16 @@ valid_y = np.array(valid_y)
 test_x = np.expand_dims(np.array(test_x), 1)
 test_y = np.array(test_y)
 
-p = model.predict([valid_x, np.squeeze(valid_x, axis=1)], 1).reshape((len(pages), -1))
-t = model.predict([train_x, np.squeeze(train_x, axis=1)], 1).reshape((len(pages), -1))
+print(train_x.shape)
+
+p = model.predict([valid_x], batch_size=batch_size).reshape(1000, -1)
+t = model.predict([train_x], batch_size=batch_size).reshape(1000, -1)
+ts = model.predict([test_x], batch_size=batch_size).reshape(1000, -1)
 
 print(p.shape)
 print(t.shape)
 
 for idx, page in enumerate(pages):
-    plot_pred(data[page][:valid_indx], p[idx], t[idx], batch_size)
+    plot_pred(data[page], p[idx], t[idx], ts[idx], 1)
 
 
