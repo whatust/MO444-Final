@@ -13,7 +13,6 @@ from keras.models import Sequential
 from keras.models import Model
 from keras.layers import Dense
 from keras.layers import LSTM
-from keras.layers import GRU
 from keras.layers import Dropout
 from keras.layers import Activation
 from keras.layers import Flatten
@@ -28,7 +27,7 @@ from keras.utils import plot_model
 import matplotlib.pyplot as plt
 import keras.backend as K
 
-from input_wiki import append_data 
+from input_wiki import append_data_lstm
 from input_wiki import day_to_value
 from input_wiki import date_to_value
 from input_wiki import treat
@@ -49,7 +48,7 @@ data = data_file.readlines()
 days = data[0].split(',')
 days = [i.strip().replace("\"", "") for i in days]
 days[0] = ""
-data = [treat(i) for i in data[1:50000]] # ignores first line and any line after 50000
+data = [treat(i) for i in data[1:50001]] # ignores first line and any line after 50000
 print("done")
 
 # creates a map where a page is the key and a exclusive integer is the value
@@ -62,11 +61,10 @@ for e in data:
 # input
 print("Creating input")
 
-num_days = 1
 train_percentage = 0.7
 valid_percentage = 0.2
 
-# Creating index for train lcaidation and test
+# Creating index for train locaidation and test
 train_indx = int(train_percentage * len(data[0]))
 valid_indx = int((train_percentage + valid_percentage) * len(data[0]))
 
@@ -80,66 +78,67 @@ test_x = []
 test_y = []
 
 for i in range(0, len(data)): # using every page
-    append_data(data[i][0], data[i][1:train_indx], m, days, train_x, train_y, num_days = num_days)
-    append_data(data[i][0], data[i][train_indx:valid_indx], m, days, valid_x, valid_y, num_days = num_days)
-    append_data(data[i][0], data[i][valid_indx:], m, days, test_x, test_y, num_days = num_days)
+    append_data_lstm(data[i][0], data[i][1:train_indx], m, days, train_x, train_y)
+    append_data_lstm(data[i][0], data[i][train_indx:valid_indx], m, days, valid_x, valid_y)
+    append_data_lstm(data[i][0], data[i][valid_indx:], m, days, test_x, test_y)
 
-train_x = np.expand_dims(np.array(train_x), 1)
-train_y = np.array(train_y)
+train_x = np.array(train_x).reshape((-1, train_indx - 3, 3))
+train_x = np.transpose(train_x, (1,0,2)).reshape((-1, 1, 3))
+train_y = np.array(train_y).reshape((-1, train_indx - 3))
+train_y = np.transpose(train_y, (1,0)).reshape(-1, 1)
 
-valid_x = np.expand_dims(np.array(valid_x), 1)
-valid_y = np.array(valid_y)
+valid_x = np.array(valid_x).reshape((-1, valid_indx - train_indx - 2, 3))
+valid_x = np.transpose(valid_x, (1,0,2)).reshape(-1, 1, 3)
+valid_y = np.array(valid_y).reshape((-1, valid_indx - train_indx - 2))
+valid_y = np.transpose(valid_y, (1,0)).reshape(-1, 1)
 
-test_x = np.expand_dims(np.array(test_x), 1)
-test_y = np.array(test_y)
+test_x = np.array(test_x).reshape((-1, len(data[0]) - valid_indx-2, 3))
+test_x = np.transpose(test_x, (1,0,2)).reshape(-1, 1, 3)
+test_y = np.array(test_y).reshape((-1, len(data[0]) - valid_indx-2))
+test_y = np.transpose(test_y, (1,0)).reshape(-1, 1)
 
 print("done")
 
 # model
 print("Initialize model")
 epochs = 5
-batch_size = 1000
-learning_rate = 1e-5
+batch_size = 50000
+learning_rate = 1e-4
 decay = 0.000000
-lstm_size = 256
+lstm_size = 1024
 hidden_size = 1024
 
-lstm_input = Input(shape=(1,3))
-lstm_0 = GRU(lstm_size, return_sequences=True)(lstm_input)
-lstm_1 = GRU(lstm_size, return_sequences=True)(lstm_0)
-lstm_2 = GRU(lstm_size, return_sequences=True)(lstm_1)
-lstm_3 = GRU(lstm_size)(lstm_2)
+lstm_input = Input(shape=(1,3), batch_shape=[batch_size, 1 ,3])
+#lstm_0 = LSTM(lstm_size, return_sequences=True, stateful=True)(lstm_input)
+lstm_0 = LSTM(lstm_size, stateful=True)(lstm_input)
 
-norm_0 = BatchNormalization()(lstm_3)
+dense_0 = Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00))(lstm_0)
 
-dense_input = Input(shape=(3, ))
-dense_0 = Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00))(dense_input)
-norm_1 = BatchNormalization()(dense_0)
-
-merge = concatenate([norm_1, norm_0], axis=1)
-
-dense_1 = Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00))(merge)
+#norm_0 = BatchNormalization()(dense_0)
+dense_1 = Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00))(dense_0)
 dense_2 = Dense(hidden_size, activation='relu', kernel_regularizer=l2(0.00))(dense_1)
 result = Dense(1, activation='relu')(dense_2)
 
-model = Model(inputs=[lstm_input, dense_input], outputs=result)
+model = Model(inputs=[lstm_input], outputs=result)
 opt = Adam(lr=learning_rate, decay=decay)
 model.compile(loss=sampe_loss, optimizer=opt)
 
 print("Run model")
-history = model.fit([train_x, np.squeeze(train_x, axis=1)], train_y, batch_size=batch_size, epochs=epochs, verbose=1)
+history = model.fit([train_x], train_y, batch_size=batch_size, epochs=epochs, shuffle=False, verbose=1)
 print("done")
 
-t_loss = model.evaluate([train_x, np.squeeze(train_x, axis=1)], y=train_y)
-v_loss = model.evaluate([valid_x, np.squeeze(valid_x, axis=1)], y=valid_y)
+t_loss = model.evaluate([train_x], y=train_y, batch_size=batch_size)
+v_loss = model.evaluate([valid_x], y=valid_y, batch_size=batch_size)
+test_loss = model.evaluate([test_x], y=test_y, batch_size=batch_size)
 
 print("Model")
 print(model)
 print("Train Loss:     {}".format(t_loss))
 print("Validation Loss:{}".format(v_loss))
+print("Test Loss:      {}".format(test_loss))
 
 print("Saving model")
-model_name = "model3_{}-{}_{:06.3f}_{:06.3f}.h5".format(lstm_size, hidden_size, v_loss, t_loss)
+model_name = "model4_{}-{}_{:06.3f}_{:06.3f}.h5".format(lstm_size, hidden_size, v_loss, t_loss)
 model_path = join("models", model_name)
 #plot_model(model, to_file=join("models", 'model1.png'))
 model.save(model_path)
@@ -151,13 +150,12 @@ plot_loss(history, model_name)
 print("Plot Predictions")
 
 pages = []
+#pages.append(1)
+#pages.append(450)
 pages.append(10513) # The big bang theory
 pages.append(9033) # Elon Musk
 pages.append(10271) # Russia
 pages.append(40734) # Thanksgiving
-
-#pages.append(10) # Russia
-#pages.append(11) # Russia
 
 train_x = []
 train_y = []
@@ -169,26 +167,38 @@ test_x = []
 test_y = []
 
 for i in pages:
-    append_data(data[i][0], data[i][1:train_indx], m, days, train_x, train_y, num_days = num_days)
-    append_data(data[i][0], data[i][train_indx:valid_indx], m, days, valid_x, valid_y, num_days = num_days)
-    append_data(data[i][0], data[i][valid_indx:], m, days, test_x, test_y, num_days = num_days)
+    append_data_lstm(data[i][0], data[i][1:train_indx], m, days, train_x, train_y)
+    append_data_lstm(data[i][0], data[i][train_indx:valid_indx], m, days, valid_x, valid_y)
+    append_data_lstm(data[i][0], data[i][valid_indx:], m, days, test_x, test_y)
 
-train_x = np.expand_dims(np.array(train_x), 1)
-train_y = np.array(train_y)
+for i in range(batch_size-len(pages)):
+    append_data_lstm(data[i][0], data[i][1:train_indx], m, days, train_x, train_y)
+    append_data_lstm(data[i][0], data[i][train_indx:valid_indx], m, days, valid_x, valid_y)
+    append_data_lstm(data[i][0], data[i][valid_indx:], m, days, test_x, test_y)
 
-valid_x = np.expand_dims(np.array(valid_x), 1)
-valid_y = np.array(valid_y)
+train_x = np.array(train_x).reshape((-1, train_indx - 3, 3))
+train_x = np.transpose(train_x, (1,0,2)).reshape((-1, 1, 3))
+train_y = np.array(train_y).reshape((-1, train_indx - 3))
+train_y = np.transpose(train_y, (1,0)).reshape(-1, 1)
 
-test_x = np.expand_dims(np.array(test_x), 1)
-test_y = np.array(test_y)
+valid_x = np.array(valid_x).reshape((-1, valid_indx - train_indx - 2, 3))
+valid_x = np.transpose(valid_x, (1,0,2)).reshape(-1, 1, 3)
+valid_y = np.array(valid_y).reshape((-1, valid_indx - train_indx - 2))
+valid_y = np.transpose(valid_y, (1,0)).reshape(-1, 1)
 
-p = model.predict([valid_x, np.squeeze(valid_x, axis=1)], 1).reshape((len(pages), -1))
-t = model.predict([train_x, np.squeeze(train_x, axis=1)], 1).reshape((len(pages), -1))
+test_x = np.array(test_x).reshape((-1, len(data[0]) - valid_indx-2, 3))
+test_x = np.transpose(test_x, (1,0,2)).reshape(-1, 1, 3)
+test_y = np.array(test_y).reshape((-1, len(data[0]) - valid_indx-2))
+test_y = np.transpose(test_y, (1,0)).reshape(-1, 1)
+
+p = model.predict([valid_x], batch_size=batch_size).reshape(batch_size, -1)
+t = model.predict([train_x], batch_size=batch_size).reshape(batch_size, -1)
+ts = model.predict([test_x], batch_size=batch_size).reshape(batch_size, -1)
 
 print(p.shape)
 print(t.shape)
 
 for idx, page in enumerate(pages):
-    plot_pred(data[page][:valid_indx], p[idx], t[idx], num_days)
+    plot_pred(data[page], p[idx], t[idx], ts[idx], 1)
 
 

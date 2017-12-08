@@ -6,13 +6,17 @@ however this model has a obvious limitation, because it cannot learn predictions
 In other words no long time sequence is learned using this model only small (7-days), page and day visit relation, since both data are also inputs.
 The stateless LSTM functions closely to an LSTM and end-up achieving a very similar performance to the MLP model, specially with the fully connected bypassing the LSTM layers.
 
-The stateful LSTM takes a lot longer to train and since we could only test one architecture it is unclear if a model based on this component can achieve significant better results.
+The stateful LSTM takes a lot longer to train and since we could only test one architecture,
+it is unclear if a model based on this component can achieve significant better results,
+since our only try was unable to achieve anything.
 This was a good base work to future experiments on the wikipedia page visit forecast problem.
 
 Possible ways to improve our models are:
 \begin{itemize}
 	\item Use embedding to cluster pages with similar behaviors (all models);
+	\item Add dropout layers to improve prediction (all models);
 	\item Use visit measurements from days before 7 days prior, by calculating mean or media of a window of days (MLP model);
+	\item Change hyper parameters on the layer size; (LSTM stateful model);
 	\item Use a different ways to feed inputs to the model, by increasing the time-steps in each backpropagarion rollback (LSTM stateful model);
 	\item increase the number of LSTM cells (LSTM stateful model);
 \end{itemize}

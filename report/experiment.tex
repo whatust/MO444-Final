@@ -17,9 +17,16 @@ The MLP model receives an input composed of an unique identifier of the wikipage
 the number of days passed since the first measurement was collected,
 and the number of visits from the last 7 days.
 
-The MLP is built with one input layer of size 1024, two hidden layers of size 1024 and a output layer of size 1.
+The MLP is built with one input layer of size 1024, two hidden layers of size 1024 and a output layer of size 1,
+a diagram of the model is shown on figure \ref{fig:model_1_diagram}.
 The optimizer chosen was Adam with learning rate of $10^{-7}$ during 20 epochs and using batch size of 1000.
 The learning rate does not decrease over time. The loss graph can be seen on figure \ref{fig:model_1_loss}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=2cm]{model_1_diagram.png}
+	\caption{Diagram of model MLP's architecture\label{fig:model_1_diagram}}
+\end{figure}
 
 \begin{figure}
 	\centering
@@ -54,7 +61,7 @@ the number of days pass the first measurement and the last count of visits of th
 The LSTM model uses 4 layers of LSTM cells of size 256, a normalization batch,
 two fully connected layers of size 1024 with ReLU as activation function and an output layer.
 parallel to the LSTM layer there is a fully connected layer of size 1024 to try improving the use of recent data,
-a batch normalization is also used after the fully connected layer too.
+a batch normalization is also used after the fully connected layer too, figure \ref{fig:model_2_diagram} shows the model architecture.
 
 The batch normalization layers are used to contain the exploding gradients of deeper neural networks,
 as well as the ReLU activation function. The Adam optimizer was chosen using learning rate of $10^-5$,
@@ -63,8 +70,14 @@ The loss curve from the model training is displayed on figure \ref{fig:model_2_l
 
 \begin{figure}
 	\centering
+	\includegraphics[width=5cm]{model_2_diagram.png}
+	\caption{Diagram of model MLP's architecture\label{fig:model_2_diagram}}
+\end{figure}
+
+\begin{figure}
+	\centering
 	\includegraphics[width=\linewidth]{model_2_loss(stateless).png}
-	\caption{Loss graph from model LSTM\label{fig:model_2_loss}}
+	\caption{Loss graph from model LSTM(stateless)\label{fig:model_2_loss}}
 \end{figure}
 
 \begin{figure}
@@ -85,3 +98,41 @@ which increases the loss value of the model.
 On the figure \ref{fig:model_2_TG} it is possible to see that the LSTM model has a lot of difficult to follow the hight spikes from some pages.
 
 \subsection{LSTM-stateful}
+
+This model passes the state from one batch to another allowing it to learn correlations between series of events.
+It receive as input the same data as the LSTM stateless model.
+It has one LSTM layer of size 256, followed by two fully connected hidden layer fo size 1024,
+and an output layer, figure \ref{fig:mode_3_diagram} shows a diagram of the model.
+The optimizer used was the Adam with learning rate of $10^{-4}$.
+The model was trained during 50 epoch with batch size of 50000 so the time steps would align their position on the batch index.
+The loss curve from the model training is displayed on figure \ref{fig:model_3_loss}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=2cm]{model_3_diagram.png}
+	\caption{Diagram of model MLP's architecture\label{fig:mode_3_diagram}}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{model_3_loss.png}
+	\caption{Loss graph from model LSTM(stateful)\label{fig:model_3_loss}}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{model_3_TBT.png}
+	\caption{Plot of the values of visits per day, of the page The Big Bang Theory (en) of all desktops\label{fig:model_3_TBT}}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{model_3_TG.png}
+	\caption{Plot of the values of visits per day, of the page Thanksgiving (en) of all desktops\label{fig:model_3_TG}}
+\end{figure}
+
+From the loss graph on figure \ref{fig:model_3_loss} the model seems to learn something,
+however from the visits prediction on figure \ref{fig:model_3_TBT} and \ref{fig:model_3_TG},
+it is easy to see that the model simply cannot fit to any curve of the prediction.
+This probably happens because the time step we are using is to small, which does not allow the model to unroll enough steps,
+and learn the relation between output of one state and the input of another state.

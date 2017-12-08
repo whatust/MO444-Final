@@ -47,7 +47,7 @@ def treat(s):
             r[i] = int(float(r[i]))
     return r
 
-def append_data_lstm(page, dat, m, days, x, y, batch_size=1000):
+def append_data_lstm(page, dat, m, days, x, y):
     ### Appends to x, y the input/output
     ### input format: [page, current_day, access_of_previous_days]
     # page: a exclusive number given by the map m
