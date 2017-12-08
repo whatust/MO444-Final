@@ -136,3 +136,24 @@ however from the visits prediction on figure \ref{fig:model_3_TBT} and \ref{fig:
 it is easy to see that the model simply cannot fit to any curve of the prediction.
 This probably happens because the time step we are using is to small, which does not allow the model to unroll enough steps,
 and learn the relation between output of one state and the input of another state.
+
+Table \ref{tab:results} show the loss value for all models on the training, validation and test dataset. The best performing model was the first one. All models performed better on validation and test dataset, this probably is a result of easier to predict data on those sets. As an example the wikipedia page from Thanksgiving has its bots spikes in the training data set while validation and test is basically stable, another example can be seen in figure \ref{fig:russia} where there is a big spike on the training data that never happens again.
+
+\begin{table}[htbp]
+	\centering
+	\begin{tabular}{|c|c|c|r|}
+		\hline
+		& Model\_1 & model\_2(stateless) & \multicolumn{1}{l|}{model\_3(stateful)} \\ \hline
+		Train & 46.76071 & 50.50748 & 59.08432 \\ \hline
+		Validation & 34.91314 & 38.97160 & 46.33987 \\ \hline
+		Test & 35.16409 & 39.14184 & 44.61450 \\ \hline
+	\end{tabular}
+	\vspace{1mm}
+	\caption{Table with loss value of all models on training, validation and test dataset.\label{tab:results}}
+\end{table}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{russia.png}
+	\caption{Plot of visits count for page Russia (en) on all desktops\label{fig:russia}}
+\end{figure}
